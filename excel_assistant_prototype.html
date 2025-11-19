@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='viewport' content='width=device-width,initial-scale=1' />
+  <title>Excel Assistant - Prototype</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#06b6d4;--glass:rgba(255,255,255,0.03);--radius:12px;--padding:16px;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071025 0%,#071827 60%);color:#e6eef6}
+    .app{display:grid;grid-template-columns:320px 1fr;gap:18px;padding:22px;max-width:1200px;margin:20px auto}
+    .card{background:var(--card);border-radius:var(--radius);padding:var(--padding)}
+    header.card{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:18px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+    .sidebar{height:calc(100vh - 120px);overflow:auto;padding:12px;box-sizing:border-box}
+    .logo{display:flex;gap:10px;align-items:center}
+    .mark{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+    nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav-btn{background:var(--glass);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;color:#dff6fb;text-align:left}
+    .nav-btn.active{outline:2px solid rgba(6,182,212,0.18)}
+    .workspace{display:grid;grid-template-rows:auto 1fr;gap:12px;height:calc(100vh - 120px)}
+    .tools{display:flex;gap:12px;align-items:center}
+    .search input{width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit}
+    .controls{display:flex;gap:8px}
+    button.btn{background:linear-gradient(90deg,#06b6d4,#7c3aed);border:none;padding:9px 12px;border-radius:9px;color:#022;cursor:pointer}
+    .panels{display:grid;grid-template-columns:380px 1fr;gap:12px;height:100%}
+    .panel-left{overflow:auto}
+    .section-title{font-size:13px;margin:6px 0;color:var(--muted)}
+    .form-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    input[type=text],select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+    textarea{min-height:64px}
+    .small{font-size:13px;color:var(--muted)}
+    .sheet{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:10px;padding:12px;overflow:auto;height:100%}
+    table.sheet-table{border-collapse:collapse;width:100%;min-width:700px}
+    table.sheet-table th,table.sheet-table td{border:1px solid rgba(255,255,255,0.03);padding:8px;min-width:80px}
+    table.sheet-table th{background:rgba(255,255,255,0.02);font-weight:600}
+    td[contenteditable]{background:transparent;outline:none}
+    .footer-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px}
+    @media (max-width:960px){.app{grid-template-columns:1fr;padding:10px}.panels{grid-template-columns:1fr}.sidebar{height:auto}}
+  </style>
+</head>
+<body>
+  <div class='app'>
+    <header class='card'>
+      <div style='display:flex;gap:12px;align-items:center'>
+        <div class='logo'>
+          <div class='mark'>EA</div>
+          <div>
+            <h1>Excel Assistant</h1>
+            <p class='lead'>Prototype - formula helper, templates, cleaner & export</p>
+          </div>
+        </div>
+      </div>
+      <div style='display:flex;gap:8px;align-items:center'>
+        <div class='small'>Ready</div>
+        <button class='btn' id='downloadBtn'>Export CSV</button>
+      </div>
+    </header>
+
+    <aside class='card sidebar'>
+      <div class='section-title'>Main</div>
+      <nav>
+        <button class='nav-btn active' data-panel='formula'>Formula Helper</button>
+        <button class='nav-btn' data-panel='templates'>Templates</button>
+        <button class='nav-btn' data-panel='cleaner'>Data Cleaner</button>
+        <button class='nav-btn' data-panel='automation'>Automation</button>
+      </nav>
+
+      <div style='margin-top:18px'>
+        <div class='section-title'>Quick Actions</div>
+        <div style='display:flex;gap:8px'>
+          <input type='file' id='fileInput' accept='text/csv' />
+        </div>
+        <div style='margin-top:12px' class='small'>Tips: Double-click any cell to edit. Use formula helper to build Excel-style formulas.</div>
+      </div>
+    </aside>
+
+    <main class='card workspace'>
+      <div class='tools'>
+        <div class='search'>
+          <input id='globalSearch' placeholder='Search templates, formulas, commands...' />
+        </div>
+        <div class='controls'>
+          <button class='btn' id='addRow'>+ Row</button>
+          <button class='btn' id='addCol'>+ Col</button>
+          <button class='btn' id='clearSheet'>Clear</button>
+        </div>
+      </div>
+
+      <div class='panels'>
+        <div class='panel-left card' id='leftPanel'>
+          <div id='formulaPanel'>
+            <div class='section-title'>Formula Helper</div>
+            <div class='small'>Build common Excel formulas visually.</div>
+            <div style='margin-top:8px'>
+              <label class='small'>Function</label>
+              <select id='funcSelect'>
+                <option value='SUM'>SUM</option>
+                <option value='AVERAGE'>AVERAGE</option>
+                <option value='CONCAT'>CONCAT</option>
+                <option value='IF'>IF</option>
+                <option value='VLOOKUP'>VLOOKUP</option>
+              </select>
+            </div>
+            <div style='margin-top:8px'>
+              <label class='small'>Arguments (comma-separated)</label>
+              <input id='funcArgs' placeholder='e.g. A1:A5 or B2, C2' />
+            </div>
+            <div style='margin-top:8px;display:flex;gap:8px'>
+              <button class='btn' id='generateFormula'>Generate Formula</button>
+              <button class='btn' id='insertFormula'>Insert into Selected</button>
+            </div>
+            <div style='margin-top:10px'>
+              <label class='small'>Resulting Formula</label>
+              <textarea id='formulaOutput' readonly></textarea>
+            </div>
+            <hr style='margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)' />
+            <div class='section-title'>Quick Examples</div>
+            <div class='small'>Click to copy example to helper.</div>
+            <div style='display:flex;flex-direction:column;gap:6px;margin-top:8px'>
+              <button class='nav-btn' data-example='SUM(A1:A10)'>SUM(A1:A10)</button>
+              <button class='nav-btn' data-example='AVERAGE(B2:B20)'>AVERAGE(B2:B20)</button>
+              <button class='nav-btn' data-example='IF(C2&gt;100, &#39;High&#39;, &#39;OK&#39;)'>IF(C2&gt;100, 'High', 'OK')</button>
+            </div>
+          </div>
+
+          <div id='templatesPanel' style='display:none'>
+            <div class='section-title'>Templates</div>
+            <div class='small'>Choose a template to populate the sheet.</div>
+            <div style='display:flex;flex-direction:column;gap:8px;margin-top:8px'>
+              <button class='nav-btn' data-template='budget'>Monthly Budget</button>
+              <button class='nav-btn' data-template='timesheet'>Timesheet</button>
+              <button class='nav-btn' data-template='inventory'>Inventory List</button>
+            </div>
+          </div>
+
+          <div id='cleanerPanel' style='display:none'>
+            <div class='section-title'>Data Cleaner</div>
+            <div class='small'>Run quick cleaning operations on the sheet.</div>
+            <div style='margin-top:8px' class='form-row'>
+              <button class='btn' id='trimCells'>Trim Whitespace</button>
+              <button class='btn' id='removeEmpty'>Remove Empty Rows</button>
+            </div>
+            <div style='margin-top:8px' class='form-row'>
+              <button class='btn' id='uniqRows'>Remove Duplicate Rows</button>
+            </div>
+          </div>
+
+          <div id='automationPanel' style='display:none'>
+            <div class='section-title'>Automation</div>
+            <div class='small'>Save a simple macro (sequence of actions).</div>
+            <div style='margin-top:8px'>
+              <label class='small'>Macro Name</label>
+              <input id='macroName' />
+            </div>
+            <div style='margin-top:8px'>
+              <label class='small'>Recorded Steps (simple JSON)</label>
+              <textarea id='macroSteps' placeholder='[{"action":"trim"},{"action":"removeEmpty"}]'></textarea>
+            </div>
+            <div style='margin-top:8px;display:flex;gap:8px'>
+              <button class='btn' id='saveMacro'>Save Macro</button>
+              <button class='btn' id='runMacro'>Run Macro</button>
+            </div>
+            <div id='macrosList' style='margin-top:10px'></div>
+          </div>
+
+        </div>
+
+        <div class='panel-right'>
+          <div class='sheet card'>
+            <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'>
+              <div>
+                <strong>Sheet1</strong>
+                <div class='small'>Editable spreadsheet area</div>
+              </div>
+              <div class='small'>Selected: <span id='selectedCell'>A1</span></div>
+            </div>
+            <div id='sheetArea'>
+              <table class='sheet-table' id='sheetTable'>
+                <thead>
+                  <tr id='sheetHeadRow'></tr>
+                </thead>
+                <tbody id='sheetBody'></tbody>
+              </table>
+            </div>
+            <div class='footer-actions'>
+              <div class='small' id='rowCount'></div>
+              <div style='flex:1'></div>
+              <button class='btn' id='exportJson'>Export JSON</button>
+              <button class='btn' id='importCsv'>Import CSV</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const C = {rows:12, cols:8};
+    const sheet = [];
+    let selected = {r:0,c:0};
+    function colLabel(n){ let s=''; n++; while(n>0){ let m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26);} return s }
+    function initSheet(rows=C.rows, cols=C.cols){ for(let r=0;r<rows;r++){ sheet[r]=[]; for(let c=0;c<cols;c++){ sheet[r][c]='' } } renderSheet() }
+    function renderSheet(){ const head = document.getElementById('sheetHeadRow'); head.innerHTML=''; const th0 = document.createElement('th'); th0.textContent=''; head.appendChild(th0); for(let c=0;c<sheet[0].length;c++){ const th=document.createElement('th'); th.textContent=colLabel(c); head.appendChild(th) } const body = document.getElementById('sheetBody'); body.innerHTML=''; for(let r=0;r<sheet.length;r++){ const tr=document.createElement('tr'); const th=document.createElement('th'); th.textContent=r+1; tr.appendChild(th); for(let c=0;c<sheet[r].length;c++){ const td=document.createElement('td'); td.contentEditable=true; td.dataset.r=r; td.dataset.c=c; td.innerText=sheet[r][c]; td.addEventListener('focus',()=>{ selected.r=r; selected.c=c; updateSelectedLabel() }); td.addEventListener('input',()=>{ sheet[r][c]=td.innerText }); tr.appendChild(td) } body.appendChild(tr) } updateCounts() }
+    function updateCounts(){ document.getElementById('rowCount').textContent = 'Rows: '+sheet.length+' × Cols: '+sheet[0].length }
+    function updateSelectedLabel(){ document.getElementById('selectedCell').textContent = colLabel(selected.c)+ (selected.r+1) }
+    document.getElementById('addRow').addEventListener('click', ()=>{ sheet.push(new Array(sheet[0].length).fill('')); renderSheet() })
+    document.getElementById('addCol').addEventListener('click', ()=>{ for(let r=0;r<sheet.length;r++) sheet[r].push(''); renderSheet() })
+    document.getElementById('clearSheet').addEventListener('click', ()=>{ for(let r=0;r<sheet.length;r++) for(let c=0;c<sheet[r].length;c++) sheet[r][c]=''; renderSheet() })
+    document.getElementById('generateFormula').addEventListener('click', ()=>{ const f=document.getElementById('funcSelect').value; const args=document.getElementById('funcArgs').value.trim(); let out=''; if(f==='SUM') out='=SUM('+args+')'; if(f==='AVERAGE') out='=AVERAGE('+args+')'; if(f==='CONCAT') out='=CONCAT('+args+')'; if(f==='IF') out='=IF('+args+')'; if(f==='VLOOKUP') out='=VLOOKUP('+args+')'; document.getElementById('formulaOutput').value=out })
+    document.getElementById('insertFormula').addEventListener('click', ()=>{ const f=document.getElementById('formulaOutput').value; if(!f) return alert('Generate a formula first'); sheet[selected.r][selected.c]=f; renderSheet() })
+    document.querySelectorAll('[data-example]').forEach(btn=>btn.addEventListener('click', ()=>{ const ex=btn.dataset.example; document.getElementById('formulaOutput').value='='+ex }))
+    const templates = { budget:{ head:['Category','Planned','Actual','Difference'], rows:[['Rent','1000','1000','=C2-B2'],['Groceries','300','320','=C3-B3'],['Utilities','150','120','=C4-B4']] }, timesheet:{ head:['Date','Employee','Hours','Project'], rows:[['2025-11-19','Alex','8','Project A'],['2025-11-20','Alex','7.5','Project B']] }, inventory:{ head:['Item','SKU','Qty','Price'], rows:[['Widget A','WGT-001','120','3.5'],['Widget B','WGT-002','50','9.99']] } }
+    document.querySelectorAll('[data-template]').forEach(btn=>btn.addEventListener('click', ()=>{ const t=btn.dataset.template; applyTemplate(t) }))
+    function applyTemplate(name){ const t=templates[name]; if(!t) return; const cols=t.head.length; const rows=t.rows.length+1; for(let r=0;r<rows;r++){ sheet[r]=new Array(cols).fill('') } sheet[0]=t.head.slice(); for(let r=1;r<rows;r++) sheet[r]=t.rows[r-1].slice(); renderSheet() }
+    document.getElementById('trimCells').addEventListener('click', ()=>{ for(let r=0;r<sheet.length;r++) for(let c=0;c<sheet[r].length;c++) sheet[r][c]=String(sheet[r][c]).trim(); renderSheet() })
+    document.getElementById('removeEmpty').addEventListener('click', ()=>{ const filtered=sheet.filter(row=>row.some(cell=>String(cell).trim() !== '')); if(filtered.length===0) filtered.push(new Array(sheet[0].length).fill('')); for(let r=0;r<filtered.length;r++) sheet[r]=filtered[r]; sheet.length=filtered.length; renderSheet() })
+    document.getElementById('uniqRows').addEventListener('click', ()=>{ const seen=new Set(); const res=[]; for(const row of sheet){ const key=row.join('\u0001'); if(!seen.has(key)){ seen.add(key); res.push(row) } } for(let r=0;r<res.length;r++) sheet[r]=res[r]; sheet.length=res.length; renderSheet() })
+    const macros={}; document.getElementById('saveMacro').addEventListener('click', ()=>{ const name=document.getElementById('macroName').value.trim(); if(!name) return alert('Enter macro name'); try{ const steps=JSON.parse(document.getElementById('macroSteps').value || '[]'); macros[name]=steps; renderMacros() }catch(e){ alert('Invalid JSON for steps') } })
+    function renderMacros(){ const d=document.getElementById('macrosList'); d.innerHTML=''; for(const k in macros){ const b=document.createElement('button'); b.className='nav-btn'; b.textContent='Run: '+k; b.addEventListener('click', ()=>runMacro(k)); d.appendChild(b) } }
+    document.getElementById('runMacro').addEventListener('click', ()=>{ const name=document.getElementById('macroName').value.trim(); if(!macros[name]) return alert('Macro not found'); runMacro(name) })
+    function runMacro(name){ const steps=macros[name]||[]; for(const s of steps){ if(s.action==='trim') document.getElementById('trimCells').click(); if(s.action==='removeEmpty') document.getElementById('removeEmpty').click() } alert('Macro '+name+' executed ('+steps.length+' steps)') }
+    function toCSV(){ return sheet.map(row=> row.map(cell=> '"'+String(cell).replace(/"/g,'""')+'"').join(',')).join('\n') }
+    function toJSON(){ return JSON.stringify({rows:sheet}, null, 2) }
+    document.getElementById('exportJson').addEventListener('click', ()=>{ const blob=new Blob([toJSON()], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='sheet.json'; a.click(); URL.revokeObjectURL(url) })
+    document.getElementById('downloadBtn').addEventListener('click', ()=>{ const blob=new Blob([toCSV()], {type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='sheet.csv'; a.click(); URL.revokeObjectURL(url) })
+    document.getElementById('fileInput').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload = ()=>{ parseCsv(reader.result) }; reader.readAsText(f) })
+    function parseCsv(txt){ const rows=txt.split(/\r?\n/).filter(Boolean).map(r=> r.split(',').map(c=> c.replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'))); const cols=Math.max(...rows.map(r=>r.length)); for(let r=0;r<rows.length;r++){ sheet[r]=new Array(cols).fill(''); for(let c=0;c<rows[r].length;c++) sheet[r][c]=rows[r][c] } renderSheet() }
+    document.getElementById('importCsv').addEventListener('click', ()=> document.getElementById('fileInput').click())
+    document.querySelectorAll('.nav-btn[data-panel]').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.nav-btn[data-panel]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const p=btn.dataset.panel; ['formula','templates','cleaner','automation'].forEach(name=>{ document.getElementById(name+'Panel').style.display = (name===p)?'block':'none' }) }))
+    document.getElementById('globalSearch').addEventListener('input',(e)=>{ const q=e.target.value.toLowerCase(); document.querySelectorAll('[data-template]').forEach(b=>{ b.style.display = b.dataset.template.includes(q) || q===''? 'block':'none' }) })
+    initSheet(); updateSelectedLabel();
+  </script>
+</body>
+</html>
